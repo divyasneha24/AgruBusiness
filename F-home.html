@@ -1,0 +1,176 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Home</title>
+    <link rel="stylesheet" href="{% static 'css/farmerhome.css' %}">
+    <link rel="icon" href="/static/images/agribusiness-logo.png" type="image/x-icon">
+</head>
+<body>
+
+    <!-- 🔹 Header -->
+    <div class="header logo-nav">
+        <div class="image">
+            <img class="logo" src="{% static 'images/agribusiness-logo.png' %}" alt="logo">
+        </div>
+        
+        <nav class="nav-bars">
+            <ul>
+                <li><a href="{% url 'farmer_home' %}">Home</a></li>
+                <li><a href="{% url 'orders' %}">Orders</a></li>
+                <li><a href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+            
+        </nav>
+        
+    </div>
+    
+    
+    <main>
+        <div class="products-grid">
+            {% for farmer_crop in farmer_crops %}
+            <div class="product-container">
+                <div class="product-image-container">
+                    <img class="product-image" src="{{ farmer_crop.crop.image.url }}" alt="{{ farmer_crop.crop.name }}">
+                </div>
+                <div class="product-name limit-text-to-2-lines">
+                    {{ farmer_crop.crop.name }}
+                </div>
+
+                <!-- Editable Price -->
+                <div class="product-price js-productprice">
+                    <label>Price for one kg </label>
+                    <input type="number" id="price_{{ farmer_crop.id }}" value="{{ farmer_crop.price_per_kg }}" oninput="updatePrice('{{ farmer_crop.id }}', this.value)">
+                    <label>Quantity in Kg </label>
+                    <input type="number" id="price_{{ farmer_crop.id }}" value="{{ farmer_crop.quantity }}" oninput="updateQuantity('{{ farmer_crop.id }}', this.value)">
+
+                </div>
+
+                <!-- Toggle Button for Availability -->
+                <div class="availability-toggle">
+                    <label>
+                        <input type="checkbox" id="toggle_{{ farmer_crop.id }}" {% if farmer_crop.is_available %}checked{% endif %} onchange="toggleAvailability('{{ farmer_crop.id }}')">
+                        <p id="status_{{ farmer_crop.id }}">{{ farmer_crop.is_available|yesno:"Available,Not Available" }}</p>
+                    </label>
+                </div>
+                
+                
+            </div>
+            {% empty %}
+            <p>No crops added yet.</p>
+            {% endfor %}
+            
+            <!-- Add New Crop Button -->
+            <div class="product-container">
+                <div class="product-image-container">
+                    <a class="product-image" href="#" onclick="openForm()">
+                        <img class="add-button" src="{% static 'images/plus button.png' %}" alt="Add button">
+                    </a>
+                </div>
+            </div>
+                
+            
+        </div>
+
+        <!-- Modal for Adding Crops -->
+        <div id="addCropModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeForm()">&times;</span>
+                {% if available_crops %}
+                <form method="post" enctype="multipart/form-data" class="form-container">
+                    {% csrf_token %}
+                    <h2>Select a Crop to Sell</h2>
+                    
+                    <div class="crop-selection-container">
+                        <div class="crop-list">
+                            {% for crop in available_crops %}
+                            <div class="crop-item" onclick="selectCrop('{{ crop.id }}', '{{ crop.name }}', this)">
+                                <img src="{{ crop.image.url }}" alt="{{ crop.name }}">
+                                <p>{{ crop.name }}</p>
+                            </div>
+                            {% empty %}
+                            <p>All crops are already added.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="crop" id="selectedCropId">
+                    
+                    <label for="price_per_kg">Price per kg:</label>
+                    <input type="number" name="price_per_kg" placeholder="Enter price for kg" required><br/>
+                    <label for="quantity">Quantity: </label>
+                    <input type="number" name="quantity" placeholder="Enter Quantity" required><br/>
+                    <button type="submit" class="btn">Add Crop</button>
+                </form>
+                {% else %}
+                <p>All crops are already added.</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 🔹 JavaScript -->
+    <script>
+        function openForm() {
+            document.getElementById("addCropModal").style.display = "block";
+        }
+
+        function closeForm() {
+            document.getElementById("addCropModal").style.display = "none";
+        }
+
+        function selectCrop(cropId, cropName, element) {
+            document.querySelectorAll('.crop-item').forEach(item => item.classList.remove('selected-crop'));
+            element.classList.add('selected-crop');
+            document.getElementById("selectedCropId").value = cropId;
+        }
+
+        window.onclick = function(event) {
+            let modal = document.getElementById("addCropModal");
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        function updatePrice(cropId, price) {
+            fetch(`/update_price/${cropId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ price_per_kg: price })
+            });
+        }
+        function updateQuantity(cropId, quantity) {
+            fetch(`/update_quantity/${cropId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ quantity })
+            });
+        }
+
+        function toggleAvailability(cropId) {
+            let isChecked = document.getElementById(`toggle_${cropId}`).checked;
+            document.getElementById(`status_${cropId}`).innerText = isChecked ? "Available" : "Not Available";
+
+            fetch(`/toggle_availability/${cropId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ is_available: isChecked })
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+{% load static %}
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="icon" href="/static/images/agribusiness-logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'css/register.css' %}">
+</head>
+<body>
+    <section>
+        <form method="POST" action="#">
+            {% csrf_token %}
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="alert">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+    
+            <h1> Registration</h1>
+
+            <div class="user-type-group">
+                <label class="floating-label">User Type</label>
+                <div class="radio-group">
+                    <label>
+                        {{ form.user_type.0 }}
+                    </label>
+                    <label>
+                        {{ form.user_type.1 }}
+                    </label>
+                </div>
+                <div class="errors">
+                    {% if form.user_type.errors %}
+                    <span>{{ form.user_type.errors }}</span>
+                    {% endif %}
+                </div>
+               
+            </div>
+    
+            
+            <div class="input-box">
+                {{ form.username }}
+                <label>User Name</label>
+            </div>
+            <div class="errors">
+                {% if form.username.errors %}
+                    <span>{{ form.username.errors }}</span>
+                {% endif %}
+            </div>
+    
+            <div class="input-box">
+                {{ form.email }}
+                <label for="{{ form.email.id_for_label }}">Email Address</label> 
+            </div>
+            <div class="errors">
+                {% if form.email.errors %}
+                    <span>{{ form.email.errors }}</span>
+                {% endif %}
+            </div>
+    
+            <div class="input-box">
+                {{ form.phone }}
+                <label>Phone Number</label>
+            </div>
+            <div class="errors">
+                {% if form.phone.errors %}
+                    <span>{{ form.phone.errors }}</span>
+                {% endif %}
+            </div>
+    
+            <div class="input-box">
+                {{ form.password }}
+                <label>Password</label>
+            </div>
+            <div class="errors">
+                {% if form.password.errors %}
+                    <span>{{ form.password.errors }}</span>
+                {% endif %}
+            </div>
+           
+            <div class="login">
+                <p>Already have an account? <a href="{% url 'login' %}">Login</a></p>
+            </div>
+            
+            <button type="submit">
+                <input hidden type="submit" class="form-submit" value="Register" /> Register
+            </button>
+            
+        </form>
+    </section>    
+</body>
+</html>

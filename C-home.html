@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Online Agri Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="/static/images/agribusiness-logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/general.css">
+    <link rel="stylesheet" href="/static/css/business-header.css">
+    <link rel="stylesheet" href="/static/css/products.css">
+  </head>
+  <body>
+    <div class="agribusiness-header">
+      <div class="agribusiness-header-left-section">
+        <a href="#" class="header-link">
+          <img class="agribusiness-logo"
+            src="/static/images/agribusiness-logo.png">
+          <img class="agribusiness-mobile-logo"
+            src="/static/images/agribusiness-logo.png">
+        </a>
+      </div>
+      <div class="agribusiness-header-middle-section">
+        <form method="GET" action="{% url 'customer_home' %}" class="search-form">
+            <input class="search-bar" type="text" name="search" placeholder="Search Crops or Farmers" value="{{ search_query }}">
+            <button class="search-button" type="submit">
+                <img class="search-icon" src="{% static 'images/search-icon.png' %}">
+            </button>
+        </form>
+      </div>
+      <div class="agribusiness-header-right-section">
+        <a class="orders-link header-link" href="{% url 'orders' %}">
+          <span class="orders-text">Orders</span>
+        </a>
+      </div>
+      <div class="agribusinesss-header-right-section">
+        <a class="cart-link header-link" href="{% url 'view_cart' %}">
+          <img class="cart-icon" src="/static/images/cart-icon.png">
+          <div class="cart-quantity js-cart-quantity">{{ cart_items |length }}</div>
+          <div class="cart-text">Cart</div>
+        </a>
+      </div>
+      <div>
+        <a class="cart-link header-link" href="{% url 'logout' %}">
+          <img class="logout-icon " src="/static/images/logout.png">
+          <div class="cart-text">Logout</div>
+        </a>
+      </div>
+    </div>
+    <div>
+      {% if messsages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+    
+    <div class="main">
+      <div class="products-grid js-products-grid">
+          {% for farmer_crop in farmer_crops %}
+          <div class="product-container">
+              <div class="product-image-container">
+                  <img class="product-image image" src="{{ farmer_crop.crop.image.url }}" alt="{{ farmer_crop.crop.name }}">
+              </div>
+              <div class="product-name limit-text-to-2-lines">
+                  {{ farmer_crop.crop.name }} (Sold by: {{ farmer_crop.farmer.user.username }})
+              </div>
+              <div class="product-price">
+                  <p id="price_{{ farmer_crop.id }}" readonly>₹{{ farmer_crop.price_per_kg }}</p>
+              </div>
+              
+              <div class="product-spacer">
+                
+                <p class="product-kg">in kgs</p>
+              <div class="product-quantity-container">
+                  <select id="quantity_{{ farmer_crop.id }}">
+                    
+                    {% for i in ''|rjust:farmer_crop.quantity|make_list %}
+                    <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                    {% endfor %}
+          
+                  </select>
+              </div>
+              {% if farmer_crop.id in cart_items %}
+                <button class="already-in-cart-button" disabled>Already in Cart</button>
+              {% else %}
+               <button id="add-{{ farmer_crop.id }}" class="add-to-cart-button" onclick="addToCart('{{ farmer_crop.id }}', '{{ farmer_crop.crop.name }}')">
+                Add to Cart
+              </button>
+             {% endif %}
+              </div>
+          </div>
+          {% endfor %}
+      </div>
+      <script>
+        function addToCart(cropId, cropName) {
+          let quantity = document.getElementById('quantity_' + cropId).value;
+
+          fetch('/add-to-cart/', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'X-CSRFToken': getCookie('csrftoken')
+              },
+              body: `crop_id=${cropId}&quantity=${quantity}`
+          })
+          .then(response => response.json())
+          .then(data => {
+              alert(data.message);
+              document.querySelector('.js-cart-quantity').innerText = data.cartItemLength;
+              document.querySelector(`#add-${cropId}`).innerText = 'Already in Cart';
+              document.querySelector(`#add-${cropId}`).disabled = true;
+          });
+      }
+
+      function updateCartCount() {
+          fetch('/cart/')
+          .then(response => response.text())
+          .then(html => {
+              let parser = new DOMParser();
+              let doc = parser.parseFromString(html, "text/html");
+              let cartItems = doc.querySelectorAll("table tr").length - 1; // Exclude header
+              
+          });
+      }
+
+      // CSRF Token Helper
+      function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+              let cookies = document.cookie.split(';');
+              for (let i = 0; i < cookies.length; i++) {
+                  let cookie = cookies[i].trim();
+                  if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                      break;
+                  }
+              }
+          }
+          return cookieValue;
+      }
+
+    </script>
+
+    </div>
+  </body>
+</html>

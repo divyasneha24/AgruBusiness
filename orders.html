@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Checkout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="/static/images/agribusiness-logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/general.css">
+    <link rel="stylesheet" href="/static/css/checkout-header.css">
+    <link rel="stylesheet" href="/static/css/checkout.css">
+  </head>
+  <body>
+    <div class="checkout-header">
+      
+      <div class="header-content">
+        <div class="checkout-header-left-section">
+          <a href="{% url 'farmer_home' %}">
+            <img class="agribusiness-logo" src="/static/images/agribusiness-logo.png">
+            <img class="agribusiness-mobile-logo" src="/static/images/agribusiness-logo.png">
+          </a>
+        </div>
+
+        <div class="checkout-header-middle-section">
+          Orders (<a class="return-to-home-link"
+            href="#">{{ orders | length }} Items</a>)
+        </div>
+
+        <div class="checkout-header-right-section">
+          
+        </div>
+      </div>
+    </div>
+    <div>
+      {% if messsages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+    <div class="main">
+      {% if orders %}
+      <div class="page-title">Orders</div>
+
+      <div class="checkout-grid">
+        <div class="order-summary">
+          <div class="cart-item-container">
+            {% for item in orders %}
+            <div class="cart-item-details-grid">
+              <img class="product-image"
+                src="{{item.crop.crop.image.url}}">
+
+              <div class="cart-item-details">
+                <div class="product-name">
+                  {% if user_type == "customer" %}
+                  {{ item.crop.crop.name }} by {{ item.crop.farmer.user}}
+                  {% else %}
+                  {{ item.crop.crop.name }} by {{ item.order.customer}}
+
+                  {% endif %}
+                </div>
+                <div class="product-price">
+                  ₹{{ item.crop.price_per_kg }}
+                </div>
+                <div class="product-quantity">
+                  <span>
+                    Quantity:
+                    <span class="quantity-label" id="quantity-{{item.id}}">{{ item.quantity }}</span>
+                  </span>
+                  <div class="payment-summary-row total-row">
+                    <div>Total: </div>
+                    <div id="total-price-{{item.id}}">₹{{item.get_total_price}}</div>
+                  </div>
+                </div>
+
+              </div>
+              {% if user_type == 'farmer'%}
+              <div class="order-status">
+                <label for="order-status-{{ item.id }}">Order Status:</label>
+                <select class="order-status-dropdown" data-item-id="{{ item.id }}">
+                  <option value="accepted" {% if item.order_status == "accepted" %}selected{% endif %}>Accepted</option>
+                  <option value="on_the_way" {% if item.order_status == "on_the_way" %}selected{% endif %}>On The Way</option>
+                  <option value="delivered" {% if item.order_status == "delivered" %}selected{% endif %}>Delivered</option>
+                </select>
+              </div>
+              {% else %}
+              <div class="order-status">
+                <label for="order-status-{{ item.id }}">Order Status:</label>
+                {% if item.order_status == "accepted" %}Accepted{% endif %}>
+                {% if item.order_status == "on_the_way" %}On the Way{% endif %}>
+                {% if item.order_status == "delivered" %}Delivered{% endif %}>
+
+              </div>
+
+              {% endif %}
+
+            </div>
+            {% endfor %}
+          </div>
+
+         
+        </div>
+      </div>
+      {% else %}
+      <h3>No Orders</h3>
+      {% endif %}
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".order-status-dropdown").forEach(dropdown => {
+      dropdown.addEventListener("change", function () {
+        let itemId = this.getAttribute("data-item-id");
+        let newStatus = this.value;
+
+        fetch("{% url 'update_orderitem_status' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify({
+            "order_item_id": itemId,
+            "order_status": newStatus
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert("Order status updated successfully!");
+          } else {
+            alert("Failed to update order status.");
+          }
+        })
+        .catch(error => console.error("Error:", error));
+      });
+    });
+  });
+      
+  </script>
+  </body>
+</html>
